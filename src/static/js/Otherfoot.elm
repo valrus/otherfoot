@@ -21,9 +21,9 @@ main =
         }
 
 
-init : String -> ( Model, Cmd Msg )
-init name =
-    ( Model name Creating [] []
+init : ( Model, Cmd Msg )
+init =
+    ( Model "" Joining [] []
     , Cmd.none
     )
 
@@ -60,20 +60,26 @@ type Msg
     | Receive String
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         Create c ->
-            model
-
-        Choose c ->
-            model
+            (model, Cmd.none)
 
         Submit c ->
-            model
+            (model, Cmd.none)
+
+        Play c ->
+            (model, Cmd.none)
+
+        Choose c ->
+            (model, Cmd.none)
 
         Change s ->
-            model
+            (model, Cmd.none)
+
+        Receive s ->
+            (model, Cmd.none)
 
 
 
