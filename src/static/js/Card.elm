@@ -4,6 +4,7 @@ module Card exposing (Card)
 
 type alias Card =
     { text : String
+      image : String
     }
 
 

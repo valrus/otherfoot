@@ -4,6 +4,7 @@ import Html.App as Html
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
+import Maybe exposing (Maybe)
 import WebSocket
 
 
@@ -44,6 +45,7 @@ type alias Model =
     , state : State
     , creations : List Card
     , hand : List Card
+    , judgmentCard : Maybe Card
     }
 
 
@@ -118,10 +120,14 @@ gameScreen =
 view : Model -> Html Msg
 view model =
     case model.state of
-    Joining -> landingScreen
+    Joining ->
+        landingScreen
 
-    Creating -> cardCreationScreen
+    Creating ->
+        cardCreationScreen
 
-    Playing -> gameScreen
+    Playing ->
+        gameScreen
 
-    Judging -> gameScreen
+    Judging ->
+        gameScreen
