@@ -1,0 +1,16 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=800, initial-scale=1">
+    <title>Otherfoot</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.min.css') }}"></link>
+  </head>
+
+  <body>
+  </body>
+
+  <script type=text/javascript>
+    $STATIC_ROOT = {{ url_for('static', filename='')|tojson|safe }};
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+  </script>
+  <script type="text/javascript" src="{{ url_for('static', filename='js/elm.min.js') }}"></script>
+</html>
