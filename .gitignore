@@ -9,3 +9,6 @@ repl-temp-*
 
 # temp files
 .#*
+
+# generated elm output
+src/static/js/index.html
