@@ -29,7 +29,8 @@ type alias Drawing =
 type alias Model =
     { text : String
     , draw : Drawing
-    , drag : Maybe Drag
+    , pos : Maybe Position
+    , clicked : Bool
     }
 
 
@@ -44,7 +45,7 @@ main =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model "" (Drawing (Size 400 300) [] []) Nothing, Cmd.none )
+    ( Model "" (Drawing (Size 400 300) [] []) Nothing False, Cmd.none )
 
 
 
@@ -53,13 +54,8 @@ init =
 
 type Msg
     = EnterText String
-    | Draw (Maybe Drag)
-
-
-type alias Drag =
-    { start : Position
-    , current : Position
-    }
+    | Click Position
+    | Draw (Maybe Position)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -75,27 +71,44 @@ updateModel msg model =
                 | text = s
             }
 
+        Click pos ->
+            { model
+                | pos = Just pos
+                , clicked = True
+            }
+
         Draw pos ->
             { model
-                | drag = pos
-                , draw = updateDrawing pos model.draw
+                | pos = pos
+                , draw = if model.clicked then
+                             updateDrawing pos model.draw
+                         else
+                             model.draw
+                , clicked = case pos of
+                                Nothing -> False
+                                Just _ -> model.clicked
             }
 
 
-updateDrawing : Maybe Drag -> Drawing -> Drawing
+toDrawingPos : Size -> Position -> ( Float, Float )
+toDrawingPos size pos =
+    ( (toFloat pos.x) - (toFloat size.w / 2.0)
+    , (toFloat size.h / 2.0) - (toFloat pos.y)
+    )
+
+
+updateDrawing : Maybe Position -> Drawing -> Drawing
 updateDrawing drag draw =
     case drag of
         Nothing ->
-            Drawing
-                draw.size
+            Drawing draw.size
                 (draw.paths ++ [ traced defaultLine (path draw.current) ])
                 []
 
-        Just drag ->
-            Drawing
-                draw.size
+        Just pos ->
+            Drawing draw.size
                 draw.paths
-                (draw.current ++ [ relativePosition drag ])
+                (draw.current ++ [ toDrawingPos draw.size pos ])
 
 
 
@@ -107,22 +120,19 @@ mouseUp _ =
     Draw Nothing
 
 
-updateDrag : Position -> Position -> Msg
-updateDrag start new =
-    Draw <| Just { start = start, current = new }
+updateDrag : Position -> Msg
+updateDrag pos =
+    Draw (Just pos)
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.drag of
+    case model.pos of
         Nothing ->
             Sub.none
 
-        Just { start, current } ->
-            Sub.batch
-                [ Mouse.moves (updateDrag start)
-                , Mouse.ups mouseUp
-                ]
+        Just _ ->
+            Mouse.ups mouseUp
 
 
 
@@ -135,26 +145,42 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div
-        [ style
-            [ "border" => "1px black solid"
-            , "width" => "400px"
-            , "height" => "300px"
+    let
+        dbg =
+            case model.pos of
+                Nothing ->
+                    show "No position"
+
+                Just pos ->
+                    show (toDrawingPos model.draw.size pos)
+    in
+        div
+            [ style
+                [ "border" => "1px black solid"
+                , "width" => "400px"
+                , "height" => "300px"
+                ]
+            , getPositionOn "mousedown" Click
+            , getPositionOn "mousemove" (Just >> Draw)
             ]
-        , onMouseDown
-        ]
-        [ toHtml <| collage model.draw.size.w model.draw.size.h model.draw.paths
-        , toHtml <| show model.drag
-        ]
+            [ toHtml <| collage model.draw.size.w model.draw.size.h model.draw.paths
+            , toHtml <| dbg
+            ]
 
 
-relativePosition : Drag -> ( Float, Float )
-relativePosition { start, current } =
-    ( toFloat <| current.x - start.x - 200
-    , toFloat <| start.y - current.y - 150
-    )
+
+-- relativePosition : Drag -> ( Float, Float )
+-- relativePosition { start, current } =
+--     ( toFloat <| current.x - start.x - 200
+--     , toFloat <| start.y - current.y - 150
+--     )
 
 
-onMouseDown : Attribute Msg
-onMouseDown =
-    on "mousedown" (Json.map (\pos -> updateDrag pos pos) Mouse.position)
+offsetPosition : Json.Decoder Position
+offsetPosition =
+    Json.object2 Position ("offsetX" := Json.int) ("offsetY" := Json.int)
+
+
+getPositionOn : String -> (Position -> Msg) -> Attribute Msg
+getPositionOn s msg =
+    on s (Json.map msg offsetPosition)
