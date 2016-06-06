@@ -11,4 +11,4 @@ repl-temp-*
 .#*
 
 # generated elm output
-src/static/js/index.html
+index.html
